@@ -1,0 +1,264 @@
+#include <iostream>
+#include <stdlib.h>
+using namespace std;
+typedef int Status;
+typedef char KeyType;
+#define SSTable_INIT_SIZE 100
+#define OVERFLOW 0
+#define FALSE 0
+#define TRUE 1
+#define OK 1
+#define ERROR -1
+
+typedef struct {
+	KeyType key;    // 关键字域
+} ElemType ;
+
+typedef  struct {
+	ElemType *elem; // 数据元素存储空间基址，建表时按实际长度分配，0号单元留空
+	int       length;    // 表的长度
+} SSTable;    //顺序表的类型定义
+
+typedef struct BiTNode { // 结点结构
+    ElemType data;
+	struct BiTNode  *lchild, *rchild; // 左右孩子指针
+} BiTNode, *BiTree;
+
+Status InitSSTable(SSTable &ST) 
+//构造一个空的顺序表 
+{ 
+	ST.elem=(ElemType*)malloc(SSTable_INIT_SIZE*sizeof(ElemType)); 
+	if(!ST.elem) exit(OVERFLOW); 
+	ST.length=0; 
+	return OK; 
+} 
+
+void create(SSTable &ST) 
+//建立一个顺序表，含有n个数据元素。 
+{ 
+	int i,n; 
+	cout<<("请输入元素的个数：")<<endl; 
+	cin>>n; 
+	cout<<"请输入"<<n<<"个元素："<<endl; 
+	for(i=1;i<=n;i++) 
+	{ 
+		cin>>ST.elem[i].key; 
+		ST.length++; 
+	} 
+} 
+
+void print(SSTable ST) 
+//输出顺序表 
+{ 
+	int i; 
+	cout<<"顺序表中的元素是："<<endl; 
+	for(i=1;i<=ST.length;i++) 
+	{ 
+		cout<<ST.elem[i].key<<" "; 
+	} 
+	cout<<endl; 
+} 
+
+int Search_Seq(SSTable ST,KeyType key) {
+	// 带"哨兵"的顺序查找
+	int i;
+	ST.elem[0].key = key;      // "哨兵"
+	for (i=ST.length; ST.elem[i].key!=key;  --i); // 从后往前找
+	return i;            // 找不到时，i为0
+} // Search_Seq
+
+int Search_Bin ( SSTable ST, KeyType key ) {//折半查找
+	int low,high,mid;
+	low = 1;  high = ST.length;     // 置区间初值
+	while (low <= high) {
+		mid = (low + high) / 2;
+		if (key==ST.elem[mid].key)
+        return  mid;        // 找到待查元素
+		else  if (key<ST.elem[mid].key)
+        high = mid - 1;       // 继续在前半区间进行查找
+		else  low = mid + 1; // 继续在后半区间进行查找
+    }
+   return 0;                 // 顺序表中不存在待查元素
+} // Search_Bin
+
+Status SearchBST (BiTree T, KeyType key,BiTree f, BiTree &p ) {
+ //在根指针T所指二叉排序树中递归地查找其关键字等于key的数据元素，若查找成功，则根指针p指向该数据元素结点，并返回TRUE,否则指针p指向查找路径上访问的最后一个结点并返回FALSE,指针f指向T的双亲，其初始调用值为NULL
+	if (!T)
+	{
+		p=f;
+		return FALSE;
+	}  // 查找不成功
+	else  if ( key==T->data.key) 
+	{
+		p = T;
+		return TRUE;
+	}  // 查找成功    
+	else  if( key<T->data.key) return SearchBST(T->lchild, key, T, p);
+	else return SearchBST (T->rchild, key, T, p); // 在右子树中继续查找
+} // SearchBST
+
+Status InsertBST(BiTree &T, ElemType e) 
+{// 当二叉排序树中不存在关键字等于 e.key 的数据元素时，插入元素值为 e 
+	//的结点，并返回TRUE; 否则,不进行插入并返回FALSE
+	BiTree p,s;
+	if (!SearchBST(T,e.key,NULL,p))
+	{
+		s = (BiTree) malloc (sizeof (BiTNode));  // 为新结点分配空间
+        s->data = e;  
+        s->lchild = s->rchild = NULL;  
+        if  ( !p )  T = s;     // 插入 s 为新的根结点
+        else   if (e.key<p->data.key) p->lchild = s;       // 插入 *s 为 *p 的左孩子
+        else  p->rchild = s;     // 插入 *s 为 *p 的右孩子
+        return TRUE;     // 插入成功
+	}
+	else 
+		return FALSE;
+} // InsertBST
+
+Status Delete (BiTree &p){ 
+   // 从二叉排序树中删除结点 p，并重接它的左子树或右子树
+	BiTree q,s;
+	if (!p->rchild) {
+		q=p;p=p->lchild;
+		free(q);
+	} 
+	else if (!p->lchild) {
+		q=p;p=p->rchild;
+		free(q);
+	} 
+	else {
+		q = p;  s = p->lchild;
+        while (s->rchild) {
+			q = s;
+			s = s->rchild;
+		} // s 指向被删结点的前驱
+        p->data = s->data;
+        if (q != p ) q->rchild = s->lchild;//重接*q的右子树
+        else  q->lchild = s->lchild;// 重接*q的左子树
+        free(s);
+    }
+	return TRUE;
+} // Delete
+
+Status DeleteBST (BiTree &T,  ElemType e ) {
+  // 若二叉排序树 T 中存在其关键字等于e.key 的数据元素，则删除该数据元//素结点，并返回函数值 TRUE，否则返回函数值 FALSE
+	if (!T) return FALSE;
+	else
+	{
+		if (e.key==T->data.key) return Delete(T);
+		else if(e.key<T->data.key) return DeleteBST(T->lchild,e);
+		else return DeleteBST(T->rchild,e);
+	} // DeleteBST*/
+}
+
+
+
+Status CreateTree(BiTNode *&T){
+	char c;
+	c=getchar();
+	if(c==' ') T=NULL;
+	else{
+		T=(BiTNode *)malloc(sizeof(BiTNode));
+		if(!T) return ERROR;
+		T->data.key=c;
+		CreateTree(T->lchild);
+		CreateTree(T->rchild);
+	}
+	return OK;
+}
+
+void PrintElement(KeyType e){
+	cout<<e<<" ";
+}
+
+void Inorder(BiTree T,void (*visit)(KeyType e)){
+	if(T){
+		Inorder(T->lchild,visit);
+		visit(T->data.key);
+		Inorder(T->rchild,visit);
+	}
+}
+
+int main(){
+	SSTable ST; KeyType key;BiTree T;ElemType e;
+	int menu; 
+	do{ 
+		cout<<"*******************************************"<<endl; 
+		cout<<"1 顺序查找"<<endl; 
+		cout<<"2 折半查找"<<endl;
+		cout<<"3 在二叉排序上查找，若没有元素e,则插入它"<<endl;
+		cout<<"4 在二叉排序树上若存在元素e,则删除它"<<endl;
+		cout<<"0 退出 "<<endl; 
+		cout<<"请输入所选菜单（0-4）:"<<endl; 
+		cout<<"********************************************"<<endl; 
+		cin>>menu; 
+		switch(menu) 
+		{ 
+			case 1:
+				InitSSTable(ST); 
+			    cout<<"建立一个顺序表 "<<endl; 
+			    create(ST);
+			    print(ST);
+				cout<<"请输入要查找的关键字:"<<endl;
+				cin>>key;
+			    if (Search_Seq(ST,key))
+				cout<<"找到了关键字"<<key<<"，位置为："<<Search_Seq(ST,key)<<endl;
+				else
+				cout<<"顺序表中没有关键字"<<key<<endl;
+				break;
+			case 2:
+			    InitSSTable(ST); 
+			    cout<<"建立一个递增顺序表"<<endl;
+			    create(ST);
+			    print(ST);
+			    cout<<"请输入要查找的关键字:"<<endl;
+			    cin>>key;
+			    if (Search_Bin (ST,key))
+				cout<<"找到了关键字"<<key<<"，位置为："<<Search_Bin (ST,key)<<endl;
+				else
+				cout<<"顺序表中没有关键字"<<key<<endl;
+				break;
+			case 3:
+			    cout<<"建立一棵二叉排序树"<<endl;
+			    fflush(stdin);
+				CreateTree(T);
+			    cout<<"中序遍历次序为："<<endl;
+			    Inorder(T,PrintElement);
+			    cout<<endl<<"请输入要查找的关键字:"<<endl;
+			    cin>>key;
+			    e.key=key;
+				if (InsertBST(T,e))
+				{
+					cout<<"插入成功"<<endl;
+				    cout<<"插入元素后的二叉树中序序列为："<<endl;
+			        Inorder(T,PrintElement);
+					cout<<endl;
+				}
+				else
+					cout<<"已有该元素"<<endl;
+				break;
+			case 4:
+			    cout<<"建立一棵二叉排序树"<<endl;
+			    fflush(stdin);
+			    CreateTree(T);
+			    cout<<"中序遍历次序为："<<endl;
+			    Inorder(T,PrintElement);
+			    cout<<endl<<"请输入要查找的关键字:"<<endl;
+			    cin>>key;
+			    e.key=key;
+			    if (DeleteBST (T, e))
+				{
+					cout<<"二叉排序树上已有该元素"<<endl;
+					cout<<"删除后的二叉排序树的中序序列为："<<endl;
+					Inorder(T,PrintElement);
+			    	cout<<endl;
+				}
+				else
+				cout<<"没有该元素"<<endl;
+				break;
+			case 0:
+				exit(0);
+		}
+	}while(menu);
+	return 0;
+}
